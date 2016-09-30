@@ -1,2 +1,335 @@
 * Generating Tarot Cards with Python
 
+Nate Smith | @nate_smith
+Engineer, Venmo | Co-Organizer, Django Girls PX
+PyDX 2016
+
+[[./x_of_swords.jpg]]
+
+
+* Agenda 
+
+** Disclaimer
+** What is tarot and why are you doing this?
+** Overview of project
+** Card Representation
+** An ode to Flickr
+** Image processing with Pillow
+** Lessons learned
+
+* Disclaimer
+
+- This is an art project
+- There are some small dragons in the source code
+- I'm still a recovering Clojure developer
+- I'm neither a historian nor a mystic
+
+* What is tarot and why are you doing this?
+[[./rider_x_of_swords.jpg]]
+
+* What is tarot and why are you doing this?
+
+- Popular playing cards in Europe from 15th to 18th centuries
+- Picked up by confused English-speaking mystics
+- Turned into a divination tool
+
+* ...Divination?
+
+[[./trelawney.jpg]]
+
+* ...Divination?
+
+- Aiding decision making with random stimuli
+- Providing inspiration
+- Processing the past
+- No supernatural stuff in this talk
+ 
+* Moar Randomness
+
+- Wanted to expand the impact of Tarot beyond the basic cards
+- 100+ years of Rider-Waite-Smith Tarot
+- All about probing the unconscious, so remove the human element
+- (cough, [[https://github.com/nathanielksmith/prosaic][prosaic]])
+
+* Overview of project
+
+- Get asked for a card on Twitter
+- Pick random card
+- Ask Flickr for a related image
+- Crop, filter, and glitch image
+- Label it
+- Tweet it
+
+* TarotCard Class
+
+- Cards are represented with the ~TarotCard~ class, which holds:
+  - Name
+  - Search terms relevant to meaning
+  - Sentiment
+  - Inversed?
+  
+#+BEGIN_SRC python
+nine_of_cups = TarotCard(name='Nine of Cups',
+                         sentiment=POSITIVE,
+                         keywords=('wish', 'fulfilled', 'fulfillment', 
+                                   'goal', 'desire', 'satisfaction',
+                                   'satisfied', 'full', 'sated', 'smug', 
+                                   'smugness', 'pleased', 'content',
+                                   'contentment', 'contented', 'luxurious', 
+                                   'luxury',)),
+#+END_SRC
+
+- Might be randomly inverted upon creation, flipping its sentiment
+- Image search / filtering / glitch is informed by whatever card is randomly picked
+
+* An ode to Flickr
+
+#+BEGIN_EXAMPLE
+                           ~*~*~*  flickr.com *~*~*~
+                      ~*~*~*~* Truckin' Since '04 *~*~*~*~
+
+                                (>|          
+                                  (>|======\\    
+                            _________||____ `\\
+                        _-~~~~~~~~~|~|~~~|~|  |\\ 
+                       /           | |   | |  ||`\\
+                     /_            | |   | |  ||  `\\ 
+         ____-------(_|____________|_|___| |  ||    ||                _-~~~|
+    _--~~~            |            =|       ||~~~~~~~~~~~~~~~~~~~~~~~~~     |
+   |]                 |             |       ||                              |
+   |=   /~~~~~~~~~~\  |            /'       ||          /~~~~~~~~~~\        |
+ :~~~~/'  _ ----- _ `\~~~~~~~~~~~~~~~~~~~~~~||~~~~~~~~/'  _ ----- _
+`\~~~~~~~~|
+ |   | _-~         ~-_|_____________==______||_______| _-~         ~-_|  __--~
+ `~~~~/    _-----_    \____________________//_______/-/    _-----_    \~~
+     ;    / \ _ / \    .                             :    / \ _ / \    .
+     |   | -((*))- |   |                             |   | -((*))- |   |
+     |    \  / \  /    |                             |    \  / \  /    ,
+      \    ~-----~    /                               \    ~-----~    /
+       ~-_         _-~                             _---`-_         _-~
+#+END_EXAMPLE
+
+* An ode to Flickr
+
+- API is free and well documented
+- Search functionality is nuanced
+- FlickrAPI library works great
+- Pray Yahoo doesn't alter it any further
+
+* Image processing with Pillow
+- Pillow is a fork of PIL
+- It's mainly bugfixes
+- It's much easier to install and use
+- you still import ~PIL~
+- Can do wonderful things but its organization is confusing
+
+* Image processing with Pillow
+
+[[./quodo.jpg]]
+
+* Image processing with Pillow - Image
+
+#+BEGIN_SRC python
+from PIL import Image
+
+im = Image.open('./quodo.jpg')
+#+END_SRC
+
+* Image processing with Pillow - Basic Operations
+
+#+BEGIN_SRC python
+from PIL import Image
+
+im = Image.open('./quodo.jpg')
+
+im.size # (536, 326)
+im.mode # 'RGB'
+#     (x1,  x2,  y1,  y2)
+box = (100, 100, 400, 400) # oops out of bounds
+region = im.crop(box)
+region.save('./quodo_cropped.jpg')
+#+END_SRC
+
+* Image processing with Pillow - Basic Operations
+[[./quodo_cropped.jpg]]
+
+* Image processing with Pillow - ImageEnhance
+
+- Brightness
+- Contrast
+- Color
+- Sharpness
+
+#+BEGIN_SRC python
+from PIL import Image, ImageEnhance
+im = Image.open('./quodo.jpg')
+
+brightener = ImageEnhance.Brightness(im)
+brighter = brightener.enhance(3)
+
+contraster = ImageEnhance.Contrast(brighter)
+final = contraster.enhance(3)
+
+final.save('./quodo_enhanced.jpg')
+#+END_SRC
+
+* Image processing with Pillow - ImageEnhance
+
+[[./quodo_enhanced.jpg]]
+
+* Image processing with Pillow - ImageFilter
+
+-BLUR
+-SHARPEN
+-FIND_EDGES
+-EMBOSS
+-CONTOUR
+-DETAIL
+-EDGE_ENHANCE
+-SMOOTH
+
+* Image processing with Pillow - ImageFilter
+
+#+BEGIN_SRC python
+from PIL import Image, ImageFilter
+
+im = Image.open('./quodo.jpg')
+
+find_edges = ImageFilter.FIND_EDGES
+emboss = ImageFilter.EMBOSS
+
+final = im.filter(find_edges).filter(emboss)
+
+final.save('./quodo_filtered.jpg')
+#+END_SRC
+
+* Image processing with Pillow - ImageFilter
+
+[[./quodo_filtered.jpg]]
+
+* Image processing with Pillow - ImageOps
+
+-Common operations, sort of a grab bag
+-Mess with colors, mirroring
+
+#+BEGIN_SRC python
+from PIL import Image, ImageOps
+
+im = Image.open('./quodo.jpg')
+
+mirrored = ImageOps.mirror(im) # Flip image horizontally
+inverted = ImageOps.invert(mirrored) # Invert its colors
+posterized = ImageOps.posterize(inverted, 2) # Throw away 6 bits of color info
+
+posterized.save('./quodo_opsed.jpg')
+#+END_SRC
+
+* Image processing with Pillow - ImageOps
+
+[[./quodo_opsed.jpg]]
+
+* Image processing with Pillow - Text
+#+BEGIN_SRC python
+from PIL import Image, ImageOps, ImageDraw, ImageFont
+im = ImageOps.grayscale(Image.open('./quodo.jpg')).convert('RGBA')
+# some fills (color + opacity)
+transparent_fill = (0,0,0,0)
+opaque_white = (255, 255, 255, 255)
+font_size = 120
+font = ImageFont.truetype('./tangerine.ttf', font_size)
+text = Image.new('RGBA', im.size, transparent_fill) 
+draw = ImageDraw.Draw(text)
+
+draw.text((0,0), "The Lovers", font=font, fill=opaque_white)
+final = Image.alpha_composite(im, text)
+
+final.save('./quodo_title.jpg')
+#+END_SRC
+
+* Image processing with Pillow - Text
+[[./quodo_title.jpg]]
+
+* Image processing with Pillow - Pixel Sorting 
+
+- Really cool technique
+- I like it a whole lot (too much?)
+- Too much to cover here, but
+
+[[./sailorglitch.jpeg]]
+
+* Card Generation
+#+BEGIN_SRC python
+def generate(card:TarotCard) -> Image:
+    # Get a photo and read it into an Image
+    photo = get_photo(card.search_term)
+    im = Image.open(photo.data)
+
+    # ...
+#+END_SRC
+
+* Card Generation
+#+BEGIN_SRC python
+    # ...
+    # All of these functions need to take only an Image
+    process_sentiment_for_card = partial(process_sentiment, card)
+    place_title_for_card = partial(place_title, card)
+    maybe_invert_for_card = partial(maybe_invert, card)
+    pre_title_distorts = [blur, partial(sort_pixels, 15), find_edges, contour, emboss, detail, invert]
+    random.shuffle(pre_title_distorts)
+    post_title_distorts = [blur, edge_enhance, detail, invert, partial(sort_pixels, 5)]
+    random.shuffle(post_title_distorts)
+    # ...
+#+END_SRC
+
+* Card Generation
+#+BEGIN_SRC python
+    # ...
+    operations = [
+      random_crop,
+      maybe_zoom,
+      # modify color balance / deterioration (based on card's sentiment)
+      # Neutral - posterized slightly
+      # Positive - brightened
+      # Negative - Color band deleted, then harshly posterized
+      process_sentiment_for_card,
+      pre_title_distorts[0],
+      place_title_for_card,
+      maybe_invert_for_card,
+      post_title_distorts[0],
+      post_title_distorts[1]]
+
+    for operation in operations:
+      im = operation(im)
+
+    return im
+#+END_SRC
+
+* Lessons learned
+- Image processing is actually not terrifying
+- This project is a work of art that qualifies as fair use
+- Test your art projects 
+- Fail whale is still alive and well
+* Next Steps
+- Doing spreads
+- More classes of generation (using different source images, emoji, etc)
+- Inverting the process, finding tarot cards in existing images
+* Thanks!
+Find me:
+- [[https://twitter.com/autotarot][@autotarot]]
+- [[https://twitter.com/nate_smith][@nate_smith]]
+
+Much gratitude:
+- [[wikipedia.org]]
+- [[learntarot.com]]
+- [[fonts.google.com]]
+- [[flickr.com]]
+- [[https://twitter.com/crookedcosmos][Crooked Cosmos]]
+- PyPI Libraries:
+  - FlickrAPI
+  - Pillow
+  - Tweepy
+  - pixelsorter
+  - Celery + Redis (for responding to twitter)
+
+
+    
