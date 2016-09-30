@@ -1,0 +1,139 @@
+* Python Performance Primer
+
+ ░░░░░░░░░▄▄▄▄▄
+░░░░░░░░▀▀▀██████▄▄▄
+░░░░░░▄▄▄▄▄░░█████████▄
+░░░░░▀▀▀▀█████▌░▀▐▄░▀▐█
+░░░▀▀█████▄▄░▀██████▄██
+░░░▀▄▄▄▄▄░░▀▀█▄▀█════█▀
+░░░░░░░░▀▀▀▄░░▀▀███░▀░░░░░░▄▄
+░░░░░▄███▀▀██▄████████▄░▄▀▀▀██▌
+░░░██▀▄▄▄██▀▄███▀░▀▀████░░░░░▀█▄
+▄▀▀▀▄██▄▀▀▌████▒▒▒▒▒▒███░░░░▌▄▄▀
+▌░░░░▐▀████▐███▒▒▒▒▒▐██▌
+▀▄░░▄▀░░░▀▀████▒▒▒▒▄██▀
+░░▀▀░░░░░░▀▀█████████▀
+░░░░░░░░▄▄██▀██████▀█
+░░░░░░▄██▀░░░░░▀▀▀░░█
+░░░░░▄█░░░░░░░░░░░░░▐▌
+░▄▄▄▄█▌░░░░░░░░░░░░░░▀█▄▄▄▄▀▀▄
+▌░░░░░▐░░░░░░░░░░░░░░░░▀▀▄▄▄▀
+
+Nate Smith
+Senior Engineer, Venmo 
+Co-Organizer, Django Girls PDX
+PyDX 2016
+
+* Disclaimer
+
+- This talk is mostly for people who know the basics of Python, including its
+  various data structures
+- There are no sick hacks here, just practical tips
+- Python will never be as fast as C, but a little bit of effort will get you major speed-ups
+
+* Goals
+
+- Respond with wit to language hipsters who want you to re-write in Go
+- Answer the conversation-ending "What about the GIL??!?!!1!?" question
+- Be able to diagnose your own performance bottlenecks
+
+* Background
+
+- Was once a performance engineer on a huge Python codebase
+- Recently made some Python go 66% faster in the name of poetry
+
+* Agenda
+
+** What Even Does Performance Even Mean?
+** Ideal Computers
+** Review Slow Code
+** Profiling vs. Benchmarking
+** Know Your Data Structures
+** A Word on Complexity
+** Parallel Programming
+** Other Pythons
+** Libraries of Note
+** Protips
+** Conclusion
+
+* What Does Performance Even Mean?
+
+This car looks pretty fast. Is it performant, though?
+
+                              _.-="_-         _
+                         _.-="   _-          | ||"""""""---._______     __..
+             ___.===""""-.______-,,,,,,,,,,,,`-''----" """""       """""  __'
+      __.--""     __        ,'                   o \           __        [__|
+ __-""=======.--""  ""--.=================================.--""  ""--.=======:
+]       [w] : /        \ : |========================|    : /        \ :  [w] :
+V___________:|          |: |========================|    :|          |:   _-"
+ V__________: \        / :_|=======================/_____: \        / :__-"
+ -----------'  "-____-"  `-------------------------------'  "-____-"
+
+* What Does Performance Even Mean?
+
+This car looks pretty slow. Is it performant, though?
+
+
+                       ____________________
+                     //|           |        \
+                   //  |           |          \
+      ___________//____|___________|__________()\__________________
+    /__________________|_=_________|_=___________|_________________{}
+    [           ______ |           | .           | ==  ______      { }
+  __[__        /##  ##\|           |             |    /##  ##\    _{# }_
+ {_____)______|##    ##|___________|_____________|___|##    ##|__(______}
+                ##__##                                 ##__##        
+
+* What Does Performance Even Mean?
+
+Cars aren't just fast or slow, though.
+
+- Top speed
+- Acceleration
+- Energy Efficiency
+- Tire Redundancy
+
+* What Does Performance Even Mean?
+
+Code is the same!
+
+- Time to complete a given task
+- Number of steps taken to complete a given task
+- Amount of storage space used when completing task
+- Time spent going back and forth from storage
+
+
+* Ideal Computers
+* Slow Code Sample
+
+#+BEGIN_SRC python
+bad_characters = ['^', '#', '%', '@', '*']
+phrase_endings = [':', '.', ',', ';', '?', '!']
+
+book_text = open('/tmp/book.txt').read()
+
+phrases = []
+current_phrase = ''
+
+for c in book_text:
+  pass # TODO
+#+END_SRC
+
+* Profiling vs. Benchmarking
+* Know Your Data Structures
+* Know Your Data Structures - lists
+* Know Your Data Structures - dictionaries
+* Know Your Data Structures - sets
+* Know Your Data Structures - generators
+* Parallel Programming
+* Parallel Programming - What's the GIL?
+* Parallel Programming - Threads vs Processes
+* Other Pythons
+* Libraries of Note
+* Protips
+* Conclusion
+* End
+
+Ascii art from [[http://www.ascii-code.com/ascii-art/vehicles/cars.php][ascii-code]]
+
