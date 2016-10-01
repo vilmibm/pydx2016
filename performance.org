@@ -19,9 +19,8 @@
 ░▄▄▄▄█▌░░░░░░░░░░░░░░▀█▄▄▄▄▀▀▄
 ▌░░░░░▐░░░░░░░░░░░░░░░░▀▀▄▄▄▀
 
-Nate Smith
-Senior Engineer, Venmo 
-Co-Organizer, Django Girls PDX
+Nate Smith | @nate_smith
+Senior Engineer, Venmo | Co-Organizer, Django Girls PDX
 PyDX 2016
 
 * Disclaimer
@@ -42,19 +41,6 @@ PyDX 2016
 - Was once a performance engineer on a huge Python codebase
 - Recently made some Python go 66% faster in the name of poetry
 
-* Agenda
-
-** What Even Does Performance Even Mean?
-** Ideal Computers
-** Review Slow Code
-** Profiling vs. Benchmarking
-** Know Your Data Structures
-** A Word on Complexity
-** Parallel Programming
-** Other Pythons
-** Libraries of Note
-** Protips
-** Conclusion
 
 * What Does Performance Even Mean?
 
@@ -103,8 +89,50 @@ Code is the same!
 - Amount of storage space used when completing task
 - Time spent going back and forth from storage
 
+* The golden rule of performance
 
+- Performance is about details.
+ 
+- When your code is not performing as well as you'd like:
+  - stop and take a deep breath
+  - go outside for a walk
+  - pet a quadruped of your choosing
+  - when you're ready, come back and *look at the details*
+
+- never, ever:
+  - give into fancy/shiny new language hype
+  - try to compile into some other language
+  - go to hacker news
+  - flee to buzzwords
+   
 * Ideal Computers
+- Processing unit
+  - Executes "steps"
+  - Example: CPU, GPU. Might have more than one.
+  
+- Really Fast storage
+  - Physically close to the Processing Unit
+  - Like a closet in the basement of the PU's house
+  - Example: L1/L2/L3 cache
+   
+- Fast storage
+  - Still pretty close. Much bigger than lower tier.
+  - Like a self-service storage unit a few blocks away
+  - Example: RAM
+   
+- Slow storage
+  - Far away, but massive.
+  - Like a huge storage warehouse the next town over
+  - Example: Hard drives, Network resources
+   
+* Ideal Computers 
+- Today we'll be ignoring:
+  - CPU/GPU architectures
+  - OS differences
+  - Network stuff
+
+*but all of this might come up in your performance adventures*
+
 * Slow Code Sample
 
 #+BEGIN_SRC python
@@ -121,7 +149,18 @@ for c in book_text:
 #+END_SRC
 
 * Profiling vs. Benchmarking
+- Profiling is measuring the impact of each line of your code
+  - on Storage (ie memory allocation)
+  - on the Processing unit (ie number of steps per line)
+
+- Benchmarking is measuring the amount of *time* taken by your code
+  - Usually you benchmark whole programs or functions
+  - Sometimes you benchmark a given line of code
+
 * Know Your Data Structures
+
+- Many performance issues can be alleviated fixed by using the right data structures
+- This might look funny sometimes
 * Know Your Data Structures - lists
 * Know Your Data Structures - dictionaries
 * Know Your Data Structures - sets
