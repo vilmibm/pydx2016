@@ -1,7 +1,7 @@
 * Generating Tarot Cards with Python
 
 Nate Smith | @nate_smith
-Engineer, Venmo | Co-Organizer, Django Girls PX
+Engineer, Venmo | Co-Organizer, Django Girls PDX
 PyDX 2016
 
 [[./x_of_swords.jpg]]
@@ -9,28 +9,24 @@ PyDX 2016
 
 * Agenda 
 
-** Disclaimer
-** What is tarot and why are you doing this?
-** Overview of project
-** Card Representation
-** An ode to Flickr
-** Image processing with Pillow
-** Lessons learned
-
-* Disclaimer
-
-- This is an art project
-- There are some small dragons in the source code
-- I'm still a recovering Clojure developer
-- I'm neither a historian nor a mystic
-
-* What is tarot and why are you doing this?
-[[./rider_x_of_swords.jpg]]
+- What is Tarot?
+- What is this project?
+- Using Flickr's Search API
+- Processing images with Pillow
+- Card Generation
+- Lessons Learned
 
 * What is tarot and why are you doing this?
 
+[[./riderwaites.jpg]]
+
+* What is tarot and why are you doing this?
+
+- Deck of 78 cards
+  - The Minor Arcana (four suits with 13 cards each)
+  - The Major Arcana (named cards like Death and The Lovers)
 - Popular playing cards in Europe from 15th to 18th centuries
-- Picked up by confused English-speaking mystics
+- Picked up by English-speaking mystics
 - Turned into a divination tool
 
 * ...Divination?
@@ -44,14 +40,14 @@ PyDX 2016
 - Processing the past
 - No supernatural stuff in this talk
  
-* Moar Randomness
+* More Randomness
 
 - Wanted to expand the impact of Tarot beyond the basic cards
 - 100+ years of Rider-Waite-Smith Tarot
-- All about probing the unconscious, so remove the human element
+- All about probing the unconscious, so remove the (conscious) human element
 - (cough, [[https://github.com/nathanielksmith/prosaic][prosaic]])
 
-* Overview of project
+* @autotarot overview
 
 - Get asked for a card on Twitter
 - Pick random card
@@ -59,6 +55,28 @@ PyDX 2016
 - Crop, filter, and glitch image
 - Label it
 - Tweet it
+
+* @autotarot overview
+
+[[./bot0.png]]
+
+* @autotarot overview
+[[./bot1.png]]
+
+* @autotarot overview
+[[./bot2.png]]
+
+* @autotarot overview
+[[./bot3.png]]
+
+* @autotarot overview
+[[./bot4.png]]
+
+* @autotarot overview
+[[./bot5.png]]
+
+* @autotarot overview
+[[./bot6.png]]
 
 * TarotCard Class
 
@@ -68,19 +86,18 @@ PyDX 2016
   - Sentiment
   - Inversed?
   
+- Might be randomly inverted upon creation, flipping its sentiment
+- Image search / filtering / glitch is informed by whatever card is randomly picked
+
 #+BEGIN_SRC python
 nine_of_cups = TarotCard(name='Nine of Cups',
                          sentiment=POSITIVE,
-                         keywords=('wish', 'fulfilled', 'fulfillment', 
-                                   'goal', 'desire', 'satisfaction',
-                                   'satisfied', 'full', 'sated', 'smug', 
-                                   'smugness', 'pleased', 'content',
-                                   'contentment', 'contented', 'luxurious', 
+                         keywords=('wish', 'goal', 'desire', 
+                                   'satisfaction', 'satisfied', 
+                                   'full', 'smug', 'pleased', 
+                                   'contentment', 'contented', 
                                    'luxury',)),
 #+END_SRC
-
-- Might be randomly inverted upon creation, flipping its sentiment
-- Image search / filtering / glitch is informed by whatever card is randomly picked
 
 * An ode to Flickr
 
@@ -88,7 +105,7 @@ nine_of_cups = TarotCard(name='Nine of Cups',
                            ~*~*~*  flickr.com *~*~*~
                       ~*~*~*~* Truckin' Since '04 *~*~*~*~
 
-                                (>|          
+                                  (>|          
                                   (>|======\\    
                             _________||____ `\\
                         _-~~~~~~~~~|~|~~~|~|  |\\ 
@@ -110,30 +127,44 @@ nine_of_cups = TarotCard(name='Nine of Cups',
 #+END_EXAMPLE
 
 * An ode to Flickr
-
 - API is free and well documented
 - Search functionality is nuanced
-- FlickrAPI library works great
+- FlickrAPI library works well
 - Pray Yahoo doesn't alter it any further
+
+* Flickr searching
+#+BEGIN_SRC python
+flickr = FlickrAPI(FLICKR_KEY, FLICKR_SECRET, format='parsed-json')
+death = TarotCard(name='Death',
+                  sentiment=NEUTRAL,
+                  keywords=['dead', 'coffin', 'closed', 
+                            'door', 'ending'])
+search_term = death.search_term
+
+# Search the title, description, and tags of images on Flickr
+result = flickr.photos.search(text=search_term)
+
+# Pick a random result
+photo = random.choice(result['photos']['photo'])
+
+# Construct a url
+sizes = self.flickr.photos.getSize(photo_id=photo['id'])
+url = sizes['sizes']['size'][-1]['source']
+
+photo_data = urllib.request.urlopen(url)
+#+END_SRC
 
 * Image processing with Pillow
 - Pillow is a fork of PIL
 - It's mainly bugfixes
 - It's much easier to install and use
-- you still import ~PIL~
+- You still import ~PIL~
 - Can do wonderful things but its organization is confusing
 
 * Image processing with Pillow
 
 [[./quodo.jpg]]
 
-* Image processing with Pillow - Image
-
-#+BEGIN_SRC python
-from PIL import Image
-
-im = Image.open('./quodo.jpg')
-#+END_SRC
 
 * Image processing with Pillow - Basic Operations
 
@@ -235,14 +266,12 @@ im = ImageOps.grayscale(Image.open('./quodo.jpg')).convert('RGBA')
 # some fills (color + opacity)
 transparent_fill = (0,0,0,0)
 opaque_white = (255, 255, 255, 255)
-font_size = 120
-font = ImageFont.truetype('./tangerine.ttf', font_size)
 text = Image.new('RGBA', im.size, transparent_fill) 
 draw = ImageDraw.Draw(text)
-
+font = ImageFont.truetype('./tangerine.ttf', 120)
 draw.text((0,0), "The Lovers", font=font, fill=opaque_white)
-final = Image.alpha_composite(im, text)
 
+final = Image.alpha_composite(im, text)
 final.save('./quodo_title.jpg')
 #+END_SRC
 
@@ -308,15 +337,12 @@ def generate(card:TarotCard) -> Image:
 - Image processing is actually not terrifying
 - This project is a work of art that qualifies as fair use
 - Test your art projects 
-- Fail whale is still alive and well
-* Next Steps
-- Doing spreads
-- More classes of generation (using different source images, emoji, etc)
-- Inverting the process, finding tarot cards in existing images
+- Twitter is often over capacity, so code defensively
 * Thanks!
 Find me:
 - [[https://twitter.com/autotarot][@autotarot]]
 - [[https://twitter.com/nate_smith][@nate_smith]]
+- code: [[https://github.com/nathanielksmith/randomwaite]]
 
 Much gratitude:
 - [[wikipedia.org]]
