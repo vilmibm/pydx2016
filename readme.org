@@ -1,6 +1,6 @@
 * nate's pydx 2016 talks
 
-- ~tarot~ is a talk about [[https://twitter.com/autotarot]] / [[https://github.com/randomwaite]]
+- ~tarot~ is a talk about [[https://twitter.com/autotarot]] / [[https://github.com/nathanielksmith/randomwaite]]
 - ~performance~ is a basic intro to python performance engineering
 
 * format
