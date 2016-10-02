@@ -1,5 +1,11 @@
 * Python Performance Primer
 
+Nate Smith | @nate_smith
+Senior Engineer, Venmo | Co-Organizer, Django Girls PDX
+PyDX 2016
+
+#+BEGIN_EXAMPLE
+
  ░░░░░░░░░▄▄▄▄▄
 ░░░░░░░░▀▀▀██████▄▄▄
 ░░░░░░▄▄▄▄▄░░█████████▄
@@ -18,10 +24,7 @@
 ░░░░░▄█░░░░░░░░░░░░░▐▌
 ░▄▄▄▄█▌░░░░░░░░░░░░░░▀█▄▄▄▄▀▀▄
 ▌░░░░░▐░░░░░░░░░░░░░░░░▀▀▄▄▄▀
-
-Nate Smith | @nate_smith
-Senior Engineer, Venmo | Co-Organizer, Django Girls PDX
-PyDX 2016
+#+END_EXAMPLE
 
 * Disclaimer
 
@@ -35,12 +38,6 @@ PyDX 2016
 - Respond with wit to language hipsters who want you to re-write in Go
 - Answer the conversation-ending "What about the GIL??!?!!1!?" question
 - Be able to diagnose your own performance bottlenecks
-
-* Background
-
-- Was once a performance engineer on a huge Python codebase
-- Recently made some Python go 66% faster in the name of poetry
-
 
 * What Does Performance Even Mean?
 
@@ -91,7 +88,7 @@ Code is the same!
 
 * The golden rule of performance
 
-- Performance is about details.
+- *Performance is about details.*
  
 - When your code is not performing as well as you'd like:
   - stop and take a deep breath
@@ -104,6 +101,8 @@ Code is the same!
   - try to compile into some other language
   - go to hacker news
   - flee to buzzwords
+ 
+- *There are no silver bullets.*
    
 * Ideal Computers
 - Processing unit
@@ -133,45 +132,245 @@ Code is the same!
 
 *but all of this might come up in your performance adventures*
 
-* Slow Code Sample
-
-#+BEGIN_SRC python
-bad_characters = ['^', '#', '%', '@', '*']
-phrase_endings = [':', '.', ',', ';', '?', '!']
-
-book_text = open('/tmp/book.txt').read()
-
-phrases = []
-current_phrase = ''
-
-for c in book_text:
-  pass # TODO
-#+END_SRC
-
 * Profiling vs. Benchmarking
 - Profiling is measuring the impact of each line of your code
   - on Storage (ie memory allocation)
   - on the Processing unit (ie number of steps per line)
+  - TODO list of tools
 
 - Benchmarking is measuring the amount of *time* taken by your code
   - Usually you benchmark whole programs or functions
   - Sometimes you benchmark a given line of code
+  - ~timeit~
 
-* Know Your Data Structures
+* Unfortunate Code Sample
 
-- Many performance issues can be alleviated fixed by using the right data structures
-- This might look funny sometimes
-* Know Your Data Structures - lists
-* Know Your Data Structures - dictionaries
-* Know Your Data Structures - sets
-* Know Your Data Structures - generators
+#+BEGIN_SRC python
+def process_book(filename):
+  bad_characters = ['^', '#', '%', '@', '*', '\n']
+  phrase_endings = [':', '.', ',', ';', '?', '!']
+
+  book_text = open(filename)
+
+  phrases = []
+  current_phrase = ''
+
+  with open(filename) as book_file:
+    c = book_file.read(1)
+    while c != '':
+      if c in bad_characters:
+        pass
+      elif c in phrase_endings:
+        phrases.append(current_phrase)
+        current_phrase = ''
+      else:
+        current_phrase += c
+
+      c = book_file.read(1)
+
+  return phrases
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+In [38]: timeit.timeit('process_book("/tmp/jane_eyre.txt")', setup='from __main__ import process_book', number=1)
+Out[38]: 1.5331217749990174
+#+END_EXAMPLE
+
+* Slow Storage
+- Can we reduce disk reads?
+ 
+#+BEGIN_SRC python
+def process_book(filename):
+  bad_characters = ['^', '#', '%', '@', '*']
+  phrase_endings = [':', '.', ',', ';', '?', '!']
+
+  book_text = open(filename).read()
+
+  phrases = []
+  current_phrase = ''
+
+  for c in book_text:
+    if c in bad_characters:
+      pass
+    elif c in phrase_endings:
+      phrases.append(current_phrase)
+      current_phrase = ''
+    else:
+      current_phrase += c
+
+  return phrases
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+In [40]: timeit.timeit('process_book("/tmp/jane_eyre.txt")', setup='from __main__ import process_book', number=1)
+Out[40]: 0.9338085659983335
+#+END_EXAMPLE
+
+* Lists: The Hidden Enemy
+
+- ~in~ can take a long time -- up to the length of a list
+- that's a lot of steps, especially since we're using ~in~ twice in our loop
+- ~sets~ to the rescue!
+
+#+BEGIN_SRC python
+def process_book(filename):
+  bad_characters = set(['^', '#', '%', '@', '*'])
+  phrase_endings = set([':', '.', ',', ';', '?', '!'])
+
+  book_text = open(filename).read()
+
+  phrases = []
+  current_phrase = ''
+
+  for c in book_text:
+    if c in bad_characters:
+      pass
+    elif c in phrase_endings:
+      phrases.append(current_phrase)
+      current_phrase = ''
+    else:
+      current_phrase += c
+
+  return phrases
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+In [42]: timeit.timeit('process_book("/tmp/jane_eyre.txt")', setup='from __main__ import process_book', number=1)
+Out[42]: 0.3641004840028472
+#+END_EXAMPLE
+
+* Over-allocation
+- Lists often over-allocate to make room for growth
+- Not always possible to avoid, but ~generators~ can help
+
+#+BEGIN_SRC python
+def book_phrases(filename):
+  bad_characters = set(['^', '#', '%', '@', '*'])
+  phrase_endings = set([':', '.', ',', ';', '?', '!'])
+
+  book_text = open(filename).read()
+
+  current_phrase = ''
+
+  for c in book_text:
+    if c in bad_characters:
+      pass
+    elif c in phrase_endings:
+      yield current_phrase
+      current_phrase = ''
+    else:
+      current_phrase += c
+#+END_SRC
+
+#+BEGIN_EXAMPLE
+In [115]: timeit.timeit('list(book_phrases("/tmp/jane_eyre.txt"))', setup='from __main__ import book_phrases', number=1)
+Out[115]: 0.3666126840034849
+#+END_EXAMPLE
+
+* Over-allocation
+
+- Now other functions can consume phrases one at a time without ever building that giant list
+
+#+BEGIN_SRC python
+for phrase in book_phrases('/tmp/jane_eyre.txt'):
+  do_a_rad_thing(phrase)
+#+END_SRC
+
+
+* Honorable Mention - tuples
+
+- Faster than lists to create (if they're small enough)
+- Only useful if you know exactly how many elements they'll have
+- 'Grow' by creating a new tuple out of two others
+  - takes more steps but less RAM than growing lists
+
 * Parallel Programming
+
+- "Doing two things at once"
+- /the future/
+- processing units can't go any faster
+- Divide up work among multiple processors
+
+* Parallel Programming - Threads
+
+- /logically/ doing two things "at once" but only using one processing unit
+#+BEGIN_SRC python
+import time
+import threading
+import sys
+
+def infinite_rick_roll():
+  lyrics = [
+    'never gonna give you up',
+    'never gonna let you down',
+    'never gonna run around',
+    'and desert you',
+  ]
+  i = 0
+  while True:
+    print(lyrics[i])
+    i += 1
+    if i == len(lyrics):
+      i = 0
+    time.sleep(2)
+
+thread = threading.Thread(target=infinite_rick_roll)
+thread.start()
+
+for _ in range(0, 1000):
+  sys.stdout.write('.')
+  sys.stdout.flush()
+  time.sleep(1)
+
+thread.join()
+#+END_SRC 
+
 * Parallel Programming - What's the GIL?
-* Parallel Programming - Threads vs Processes
-* Other Pythons
-* Libraries of Note
-* Protips
+
+- All threads have access to the same memory
+- This is useful, but could lead to corruption
+- Prevent corruption  with the Global Interpreter Lock
+- Long story short, threads will only ever use one processing unit
+
+* Parallel Programming - Processes
+
+- /actual/ (not /logical/) parallelism
+- Harder to share data between processes, but not impossible
+
+#+BEGIN_SRC python
+from multiprocessing import Process, Queue
+from random import choice, randrange
+from time import sleep
+
+
+def rand_str():
+  letters = list(map(chr, range(97,123)))
+  return ''.join([choice(letters) for _ in range(0, randrange(3,10))])
+
+def greeter(queue):
+  while True:
+    next_name = queue.get()
+    print('OMG HI HOW ARE YOU', next_name)
+
+name_queue = Queue()
+p = Process(target=greeter, args=[name_queue])
+p.start()
+
+while True:
+  name_queue.put(rand_str() + " " + rand_str())
+  sleep(2)
+#+END_SRC
+
 * Conclusion
+- Things fast with small inputs can get very slow with large inputs
+  - Don't sweat the small stuff
+  - Don't prematurely optimize
+   
+- When someone says "BUT WHAT ABOUT THE GIL?!"
+  - "Python has a rich multiprocessing library that sidesteps the GIL's limitations"
+   
+- You can do it!
+
 * End
 
 Ascii art from [[http://www.ascii-code.com/ascii-art/vehicles/cars.php][ascii-code]]
