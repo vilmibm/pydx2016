@@ -1,11 +1,8 @@
 * Python Performance Primer
-
 Nate Smith | @nate_smith
 Senior Engineer, Venmo | Co-Organizer, Django Girls PDX
 PyDX 2016
-
 #+BEGIN_EXAMPLE
-
  ░░░░░░░░░▄▄▄▄▄
 ░░░░░░░░▀▀▀██████▄▄▄
 ░░░░░░▄▄▄▄▄░░█████████▄
@@ -27,21 +24,30 @@ PyDX 2016
 #+END_EXAMPLE
 
 * Disclaimer
-
-- This talk is mostly for people who know the basics of Python, including its
-  various data structures
-- There are no sick hacks here, just practical tips
+- This talk is for people who just know the basics of Python
+- There are no sick hacks here, just practical tips and introductory info
+- This talk is not exhaustive
 - Python will never be as fast as C, but a little bit of effort will get you major speed-ups
+- I've worked as a performance engineer but I don't know everything
 
 * Goals
-
-- Respond with wit to language hipsters who want you to re-write in Go
-- Answer the conversation-ending "What about the GIL??!?!!1!?" question
 - Be able to diagnose your own performance bottlenecks
+- Have some context as you learn more about performance
+- Respond with wit to language hipsters who want you to re-write in something else
+
+* Why I care about performance
+- not for science
+- not for work
+- i care about efficient use of hardware
+- making efficient use of hardware means:
+  - your code will run on lower end hardware
+  - your code will reach more people
+- performance is a class issue
 
 * What Does Performance Even Mean?
 
 This car looks pretty fast. Is it performant, though?
+#+BEGIN_EXAMPLE
 
                               _.-="_-         _
                          _.-="   _-          | ||"""""""---._______     __..
@@ -52,12 +58,13 @@ This car looks pretty fast. Is it performant, though?
 V___________:|          |: |========================|    :|          |:   _-"
  V__________: \        / :_|=======================/_____: \        / :__-"
  -----------'  "-____-"  `-------------------------------'  "-____-"
+#+END_EXAMPLE
 
 * What Does Performance Even Mean?
 
 This car looks pretty slow. Is it performant, though?
 
-
+#+BEGIN_EXAMPLE
                        ____________________
                      //|           |        \
                    //  |           |          \
@@ -67,6 +74,7 @@ This car looks pretty slow. Is it performant, though?
   __[__        /##  ##\|           |             |    /##  ##\    _{# }_
  {_____)______|##    ##|___________|_____________|___|##    ##|__(______}
                 ##__##                                 ##__##        
+#+END_EXAMPLE
 
 * What Does Performance Even Mean?
 
@@ -86,9 +94,10 @@ Code is the same!
 - Amount of storage space used when completing task
 - Time spent going back and forth from storage
 
-* The golden rule of performance
+* The golden rule(s) of performance
 
 - *Performance is about details.*
+- *There are no silver bullets.*
  
 - When your code is not performing as well as you'd like:
   - stop and take a deep breath
@@ -96,13 +105,11 @@ Code is the same!
   - pet a quadruped of your choosing
   - when you're ready, come back and *look at the details*
 
-- never, ever:
+- never:
   - give into fancy/shiny new language hype
   - try to compile into some other language
   - go to hacker news
   - flee to buzzwords
- 
-- *There are no silver bullets.*
    
 * Ideal Computers
 - Processing unit
@@ -133,25 +140,36 @@ Code is the same!
 *but all of this might come up in your performance adventures*
 
 * Profiling vs. Benchmarking
-- Profiling is measuring the impact of each line of your code
+- Profiling is measuring the impact of your code from a line or function perspective
   - on Storage (ie memory allocation)
-  - on the Processing unit (ie number of steps per line)
-  - TODO list of tools
+  - on the Processing unit (ie number of steps per line or function)
+  - Tools
+    - ~cProfile~
+    - ~line_profiler~
+    - ~heapy~
+    - ~dowser~
+  - /looking from the inside/
 
+* Profiling vs. Benchmarking
 - Benchmarking is measuring the amount of *time* taken by your code
-  - Usually you benchmark whole programs or functions
-  - Sometimes you benchmark a given line of code
-  - ~timeit~
+  - Usually you benchmark whole programs as a kind of black box
+  - Tools
+    - ~timeit~
+    - bash's ~time~
+  - /looking from the outside/
+  - important to benchmark a lot under different scenarios
+    - always average
 
 * Unfortunate Code Sample
+- heavy simplification of some code i recently wrote for [[https://github.com/nathanielksmith/prosaic][prosaic]]
+- read a file, character by character
+- collect a list of phrases
 
+* Unfortunate Code Sample
 #+BEGIN_SRC python
 def process_book(filename):
   bad_characters = ['^', '#', '%', '@', '*', '\n']
   phrase_endings = [':', '.', ',', ';', '?', '!']
-
-  book_text = open(filename)
-
   phrases = []
   current_phrase = ''
 
@@ -165,29 +183,32 @@ def process_book(filename):
         current_phrase = ''
       else:
         current_phrase += c
-
       c = book_file.read(1)
 
   return phrases
 #+END_SRC
 
+* Unfortunate Code Sample
+
 #+BEGIN_EXAMPLE
-In [38]: timeit.timeit('process_book("/tmp/jane_eyre.txt")', setup='from __main__ import process_book', number=1)
-Out[38]: 1.5331217749990174
+In : timeit.timeit('process_book("/tmp/jane_eyre.txt")', setup='from __main__ import process_book', number=1)
+Out: 1.5331217749990174
 #+END_EXAMPLE
+
+*BIG NOTE* always do multiple runs and average the results.
 
 * Slow Storage
 - Can we reduce disk reads?
+- Can we move our stuff from slow storage to fast storage more efficiently?
  
+* Slow Storage
 #+BEGIN_SRC python
 def process_book(filename):
   bad_characters = ['^', '#', '%', '@', '*']
   phrase_endings = [':', '.', ',', ';', '?', '!']
-
-  book_text = open(filename).read()
-
   phrases = []
   current_phrase = ''
+  book_text = open(filename).read()
 
   for c in book_text:
     if c in bad_characters:
@@ -201,24 +222,34 @@ def process_book(filename):
   return phrases
 #+END_SRC
 
+* Slow Storage
 #+BEGIN_EXAMPLE
-In [40]: timeit.timeit('process_book("/tmp/jane_eyre.txt")', setup='from __main__ import process_book', number=1)
-Out[40]: 0.9338085659983335
+In : timeit.timeit('process_book("/tmp/jane_eyre.txt")', setup='from __main__ import process_book', number=1)
+Out: 0.9338085659983335
 #+END_EXAMPLE
 
-* Lists: The Hidden Enemy
+*always average*
 
+* Lists: The Hidden Enemy
+#+BEGIN_SRC python
+bad_characters = ['^', '#', '%', '@', '*']
+
+# ...
+for c in book_text:
+  if c in bad_characters:
+    pass
+# ...
+#+END_SRC
 - ~in~ can take a long time -- up to the length of a list
 - that's a lot of steps, especially since we're using ~in~ twice in our loop
 - ~sets~ to the rescue!
 
+* Lists: The Hidden Enemy
 #+BEGIN_SRC python
 def process_book(filename):
   bad_characters = set(['^', '#', '%', '@', '*'])
   phrase_endings = set([':', '.', ',', ';', '?', '!'])
-
   book_text = open(filename).read()
-
   phrases = []
   current_phrase = ''
 
@@ -234,15 +265,20 @@ def process_book(filename):
   return phrases
 #+END_SRC
 
+* Lists: The Hidden Enemy
 #+BEGIN_EXAMPLE
-In [42]: timeit.timeit('process_book("/tmp/jane_eyre.txt")', setup='from __main__ import process_book', number=1)
-Out[42]: 0.3641004840028472
+In : timeit.timeit('process_book("/tmp/jane_eyre.txt")', setup='from __main__ import process_book', number=1)
+Out: 0.3641004840028472
 #+END_EXAMPLE
+
+*always average*
 
 * Over-allocation
 - Lists often over-allocate to make room for growth
 - Not always possible to avoid, but ~generators~ can help
+- use the ~yield~ keyword in a function that would otherwise return a list
 
+* Over-allocation
 #+BEGIN_SRC python
 def book_phrases(filename):
   bad_characters = set(['^', '#', '%', '@', '*'])
@@ -262,13 +298,7 @@ def book_phrases(filename):
       current_phrase += c
 #+END_SRC
 
-#+BEGIN_EXAMPLE
-In [115]: timeit.timeit('list(book_phrases("/tmp/jane_eyre.txt"))', setup='from __main__ import book_phrases', number=1)
-Out[115]: 0.3666126840034849
-#+END_EXAMPLE
-
 * Over-allocation
-
 - Now other functions can consume phrases one at a time without ever building that giant list
 
 #+BEGIN_SRC python
@@ -276,102 +306,57 @@ for phrase in book_phrases('/tmp/jane_eyre.txt'):
   do_a_rad_thing(phrase)
 #+END_SRC
 
+- generators are seriously so cool!
+
+* Over-allocation
+#+BEGIN_EXAMPLE
+In : timeit.timeit('list(book_phrases("/tmp/jane_eyre.txt"))', setup='from __main__ import book_phrases', number=1)
+Out: 0.3666126840034849
+#+END_EXAMPLE
+
+*always average*
 
 * Honorable Mention - tuples
+#+BEGIN_SRC python
+sonic = ('sonic', 'blue', 'fast') 
+#+END_SRC
 
 - Faster than lists to create (if they're small enough)
 - Only useful if you know exactly how many elements they'll have
 - 'Grow' by creating a new tuple out of two others
+  - ~(0,1,2) + (3,4,5)~ 
   - takes more steps but less RAM than growing lists
-
-* Parallel Programming
-
-- "Doing two things at once"
-- /the future/
-- processing units can't go any faster
-- Divide up work among multiple processors
-
-* Parallel Programming - Threads
-
-- /logically/ doing two things "at once" but only using one processing unit
+   
+* Honorable Mention - dictionaries
 #+BEGIN_SRC python
-import time
-import threading
-import sys
-
-def infinite_rick_roll():
-  lyrics = [
-    'never gonna give you up',
-    'never gonna let you down',
-    'never gonna run around',
-    'and desert you',
-  ]
-  i = 0
-  while True:
-    print(lyrics[i])
-    i += 1
-    if i == len(lyrics):
-      i = 0
-    time.sleep(2)
-
-thread = threading.Thread(target=infinite_rick_roll)
-thread.start()
-
-for _ in range(0, 1000):
-  sys.stdout.write('.')
-  sys.stdout.flush()
-  time.sleep(1)
-
-thread.join()
-#+END_SRC 
-
-* Parallel Programming - What's the GIL?
-
-- All threads have access to the same memory
-- This is useful, but could lead to corruption
-- Prevent corruption  with the Global Interpreter Lock
-- Long story short, threads will only ever use one processing unit
-
-* Parallel Programming - Processes
-
-- /actual/ (not /logical/) parallelism
-- Harder to share data between processes, but not impossible
-
-#+BEGIN_SRC python
-from multiprocessing import Process, Queue
-from random import choice, randrange
-from time import sleep
-
-
-def rand_str():
-  letters = list(map(chr, range(97,123)))
-  return ''.join([choice(letters) for _ in range(0, randrange(3,10))])
-
-def greeter(queue):
-  while True:
-    next_name = queue.get()
-    print('OMG HI HOW ARE YOU', next_name)
-
-name_queue = Queue()
-p = Process(target=greeter, args=[name_queue])
-p.start()
-
-while True:
-  name_queue.put(rand_str() + " " + rand_str())
-  sleep(2)
+sonic = {'name': 'sonic', 'color':'blue', 'skill':'fast'}
 #+END_SRC
+
+- basically one step to look up information
+  - way faster than searching a list, but...
+  - not generally faster than sets
+- not always a great fit for your data
+- only as performant as its keys' hashing functions
+  - can expect could performance with built-in types (~str~, ~int~, ...)
+  - be really careful if making your own hashable object
 
 * Conclusion
 - Things fast with small inputs can get very slow with large inputs
   - Don't sweat the small stuff
   - Don't prematurely optimize
-   
-- When someone says "BUT WHAT ABOUT THE GIL?!"
-  - "Python has a rich multiprocessing library that sidesteps the GIL's limitations"
+    
+- A little goes a long way
    
 - You can do it!
 
-* End
+* Thanks!
 
-Ascii art from [[http://www.ascii-code.com/ascii-art/vehicles/cars.php][ascii-code]]
+- [[https://twitter.com/nate_smith][@nate_smith]]
+- [[http://tilde.town/~vilmibm]]
+
+*Gratitude*
+
+- Ascii art from [[http://www.ascii-code.com/ascii-art/vehicles/cars.php][ascii-code]]
+- This book rules!
+[[./hpp.jpg]]
 
