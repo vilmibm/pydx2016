@@ -1,0 +1,77 @@
+
+* Parallel Programming
+
+- "Doing two things at once"
+- /the future/
+- processing units can't go any faster
+- Divide up work among multiple processors
+
+* Parallel Programming - Threads
+
+- /logically/ doing two things "at once" but only using one processing unit
+#+BEGIN_SRC python
+import time
+import threading
+import sys
+
+def infinite_rick_roll():
+  lyrics = [
+    'never gonna give you up',
+    'never gonna let you down',
+    'never gonna run around',
+    'and desert you',
+  ]
+  i = 0
+  while True:
+    print(lyrics[i])
+    i += 1
+    if i == len(lyrics):
+      i = 0
+    time.sleep(2)
+
+thread = threading.Thread(target=infinite_rick_roll)
+thread.start()
+
+for _ in range(0, 1000):
+  sys.stdout.write('.')
+  sys.stdout.flush()
+  time.sleep(1)
+
+thread.join()
+#+END_SRC 
+
+* Parallel Programming - What's the GIL?
+
+- All threads have access to the same memory
+- This is useful, but could lead to corruption
+- Prevent corruption  with the Global Interpreter Lock
+- Long story short, threads will only ever use one processing unit
+
+* Parallel Programming - Processes
+
+- /actual/ (not /logical/) parallelism
+- Harder to share data between processes, but not impossible
+
+#+BEGIN_SRC python
+from multiprocessing import Process, Queue
+from random import choice, randrange
+from time import sleep
+
+
+def rand_str():
+  letters = list(map(chr, range(97,123)))
+  return ''.join([choice(letters) for _ in range(0, randrange(3,10))])
+
+def greeter(queue):
+  while True:
+    next_name = queue.get()
+    print('OMG HI HOW ARE YOU', next_name)
+
+name_queue = Queue()
+p = Process(target=greeter, args=[name_queue])
+p.start()
+
+while True:
+  name_queue.put(rand_str() + " " + rand_str())
+  sleep(2)
+#+END_SRC
