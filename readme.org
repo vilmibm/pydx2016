@@ -1,0 +1,17 @@
+* nate's pydx 2016 talks
+
+- ~tarot~ is a talk about [[https://twitter.com/autotarot]] / [[https://github.com/randomwaite]]
+- ~performance~ is a basic intro to python performance engineering
+
+* format
+
+both talks are ~.org~ files. they display very nicely in emacs but are plently
+readable as plain text
+
+* license
+
+[[https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode][Attribution-NonCommercial-ShareAlike 4.0 International]]
+
+
+<3
+
